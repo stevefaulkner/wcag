@@ -11,12 +11,10 @@
 	<xsl:output method="xml" indent="yes"/>
 	
 	<xsl:template name="id">
-		<xsl:attribute name="id">
-			<xsl:choose>
-				<xsl:when test="@id"><xsl:value-of select="@id"/></xsl:when>
-				<xsl:otherwise><xsl:value-of select="wcag:generate-id(wcag:find-heading(.))"/></xsl:otherwise>
-			</xsl:choose>
-		</xsl:attribute>
+		<xsl:choose>
+			<xsl:when test="@id"><xsl:value-of select="@id"/></xsl:when>
+			<xsl:otherwise><xsl:value-of select="wcag:generate-id(wcag:find-heading(.))"/></xsl:otherwise>
+		</xsl:choose>
 	</xsl:template>
 	
 	<xsl:template name="content">
@@ -60,7 +58,10 @@
 	
 	<xsl:template match="html:section[@class='principle']">
 		<principle>
-			<xsl:call-template name="id"/>
+			<xsl:variable name="id"><xsl:call-template name="id"/></xsl:variable>
+			<xsl:attribute name="id">
+				<xsl:value-of select="$id"/>
+			</xsl:attribute>
 			<version>WCAG20</version>
 			<num><xsl:number count="html:section[@class='principle']" format="1"/></num>
 			<name><xsl:value-of select="wcag:find-heading(.)"/></name>
@@ -71,7 +72,11 @@
 	
 	<xsl:template match="html:section[contains(@class, 'guideline')]">
 		<guideline>
-			<xsl:call-template name="id"/>
+			<xsl:variable name="id"><xsl:call-template name="id"/></xsl:variable>
+			<xsl:attribute name="id">
+				<xsl:value-of select="$id"/>
+			</xsl:attribute>
+			<version>WCAG<xsl:value-of select="$versions.doc//id[@id = $id]/parent::version/@name"/></version>
 			<num><xsl:number level="multiple" count="html:section[contains(@class, 'principle')]|html:section[contains(@class, 'guideline')]" format="1.1"/></num>
 			<name><xsl:value-of select="wcag:find-heading(.)"/></name>
 			<xsl:call-template name="content"/>
@@ -82,7 +87,11 @@
 	
 	<xsl:template match="html:section[contains(@class, 'sc')]">
 		<success-criterion>
-			<xsl:call-template name="id"/>
+			<xsl:variable name="id"><xsl:call-template name="id"/></xsl:variable>
+			<xsl:attribute name="id">
+				<xsl:value-of select="$id"/>
+			</xsl:attribute>
+			<version>WCAG<xsl:value-of select="$versions.doc//id[@id = $id]/parent::version/@name"/></version>
 			<num><xsl:number level="multiple" count="html:section[contains(@class, 'principle')]|html:section[contains(@class, 'guideline')]|html:section[contains(@class, 'sc')]" format="1.1.1"/></num>
 			<name><xsl:value-of select="wcag:find-heading(.)"/></name>
 			<xsl:call-template name="content"/>
