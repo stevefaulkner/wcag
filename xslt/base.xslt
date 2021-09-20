@@ -5,7 +5,10 @@
 	xmlns:wcag="https://www.w3.org/WAI/GL/"
 	xmlns="http://www.w3.org/1999/xhtml"
 	exclude-result-prefixes="#all"
-	version="2.0">
+	version="3.0">
+	
+	<xsl:param name="guidelines.version"/>
+	<xsl:variable name="guidelines.version.decimal" select="replace($guidelines.version, '(\d)(\d)', '$1.$2')" />
 	
 	<xsl:param name="loc.guidelines">/guidelines/</xsl:param>
 	<xsl:param name="loc.understanding">/understanding/</xsl:param>
@@ -13,6 +16,12 @@
 	
 	<xsl:param name="techniques.file">../techniques/techniques.xml</xsl:param>
 	<xsl:variable name="techniques.doc" select="document($techniques.file)"/>
+	
+	<xsl:param name="versions.file">../guidelines/versions.xml</xsl:param>
+	<xsl:variable name="versions.doc" select="document($versions.file)"/>
+	
+	<xsl:param name="act.file">../guidelines/act-mapping.json</xsl:param>
+	<xsl:variable name="act.doc" select="json-to-xml(unparsed-text($act.file))"/>
 	
 	<xsl:function name="wcag:isheading" as="xs:boolean">
 		<xsl:param name="el"/>
@@ -56,6 +65,26 @@
 			<xsl:otherwise><xsl:value-of select="false()"/></xsl:otherwise>
 		</xsl:choose>
 	</xsl:function>
+	
+	<xsl:function name="wcag:section-meaningfully-exists" as="xs:boolean">
+		<xsl:param name="id"/>
+		<xsl:param name="section"/>
+		<xsl:choose>
+			<xsl:when test="$id = 'applicability'"><xsl:value-of select="$section and ($section/html:p[not(@class = 'instructions')] or $section/html:ol or $section/html:ul)"/></xsl:when>
+			<xsl:when test="$id = 'description'"><xsl:value-of select="$section and $section/html:p[not(@class = 'instructions')]"/></xsl:when>
+			<xsl:when test="$id = 'examples'"><xsl:value-of select="$section and ($section/html:p[not(@class = 'instructions')] or $section/html:ol or $section/html:ul or $section/html:section[@class = 'example'])"/></xsl:when>
+			<xsl:when test="$id = 'resources'"><xsl:value-of select="$section and ($section/html:p[not(@class = 'instructions')] or $section//html:li[not(. = 'Resource')] or $section//html:a[@href])"/></xsl:when>
+			<xsl:when test="$id = 'related'"><xsl:value-of select="$section and $section//html:li//html:a[@href]"/></xsl:when>
+			<xsl:when test="$id = 'tests'"><xsl:value-of select="$section and $section//html:section[@class = 'test-procedure' or @class = 'procedure']//html:li and $section//html:section[@class = 'test-results' or @class = 'results']"/></xsl:when>
+			<xsl:when test="$id = 'sufficient' or $id = 'advisory' or $id = 'gladvisory' or $id = 'failure'"><xsl:value-of select="$section and ($section/html:*[not(@class = 'instructions')]//html:li)"/></xsl:when>
+		</xsl:choose>
+	</xsl:function>
+	
+	<xsl:template match="node()|@*" priority="-1">
+		<xsl:copy>
+			<xsl:apply-templates select="node()|@*"/>
+		</xsl:copy>
+	</xsl:template>
 	
 	<xsl:template match="html:a[wcag:is-technique-link(.)]">
 		<xsl:variable name="technique-id" select="replace(@href, '^.*/([\w\d]*)(\.html)?$', '$1')"/>
@@ -106,6 +135,10 @@
 		<xsl:value-of select="format-date(current-date(), '[D] [MNn] [Y]')"/>
 	</xsl:template>
 	
+	<xsl:template match="html:*[@class = 'generate-year']">
+		<xsl:value-of select="format-date(current-date(), '[Y]')"/>
+	</xsl:template>
+	
 	<xsl:template match="html:link[@href][contains(@href, 'css/editors.css')]"/>
 	
 	<xsl:template match="html:figure">
@@ -122,8 +155,42 @@
 			<xsl:apply-templates select="@*"/>
 			<xsl:text>Figure </xsl:text>
 			<xsl:value-of select="count(parent::html:figure/preceding::html:figure) + 1"/>
+			<xsl:text> </xsl:text>
 			<xsl:apply-templates/>
 		</xsl:copy>
+	</xsl:template>
+	
+	<xsl:template match="html:p[@class = 'change']"/>
+	
+	<xsl:template match="element()[@data-include]">
+		<xsl:choose>
+			<xsl:when test="@data-include-replace = 'true'"><xsl:value-of select="unparsed-text(resolve-uri(@data-include, document-uri(ancestor::document-node())))" disable-output-escaping="yes"/></xsl:when>
+			<xsl:otherwise>
+				<xsl:copy><xsl:apply-templates select="@*[not(name() = 'data-include')]"/><xsl:value-of select="unparsed-text(resolve-uri(@data-include, document-uri(ancestor::document-node())))" disable-output-escaping="yes"/></xsl:copy>
+			</xsl:otherwise>
+		</xsl:choose>
+	</xsl:template>
+	
+	<xsl:template match="html:*[starts-with(@class, 'wcag')]">
+		<xsl:if test="not($guidelines.version)">
+			<xsl:message terminate="yes">Guidelines version not provided</xsl:message>
+		</xsl:if>
+		<xsl:variable name="version" select="substring-after(@class, 'wcag')"/>
+		<xsl:choose>
+			<xsl:when test="$version &lt; $guidelines.version">
+				<xsl:copy>
+					<xsl:apply-templates select="node()|@*"/>
+				</xsl:copy>
+			</xsl:when>
+			<xsl:when test="$version = $guidelines.version">
+				<xsl:copy>
+					<xsl:apply-templates select="@*"/>
+					<xsl:text> </xsl:text><span class="new-version">New in WCAG <xsl:value-of select="$guidelines.version"/>: </span>
+					<xsl:apply-templates/>
+				</xsl:copy>
+			</xsl:when>
+			<xsl:when test="$version &gt; $guidelines.version"><!-- don't output --></xsl:when>
+		</xsl:choose>
 	</xsl:template>
 	
 </xsl:stylesheet>

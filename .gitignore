@@ -214,3 +214,16 @@ pip-log.txt
 
 #Mr Developer
 .mr.developer.cfg
+
+#############
+## Apache Ant
+#############
+
+build.properties
+
+#############
+## Output
+#############
+
+/output/
+/output.html
