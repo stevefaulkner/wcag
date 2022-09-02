@@ -8,7 +8,7 @@ var respecConfig = {
 	permalinkHide:     false,
 	tocIntroductory: true,
 	// specification status (e.g., WD, LC, NOTE, etc.). If in doubt use ED.
-	specStatus:           "CRD",
+	specStatus:           "CR",
 	crEnd:                "2022-10-04",
 	//perEnd:               "2013-07-23",
 	publishDate:          "2022-09-06",
