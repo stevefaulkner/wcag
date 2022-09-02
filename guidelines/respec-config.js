@@ -9,9 +9,9 @@ var respecConfig = {
 	tocIntroductory: true,
 	// specification status (e.g., WD, LC, NOTE, etc.). If in doubt use ED.
 	specStatus:           "CRD",
-	crEnd:                "2022-09-30",
+	crEnd:                "2022-10-04",
 	//perEnd:               "2013-07-23",
-	publishDate:          "2022-08-16",
+	publishDate:          "2022-09-06",
 	diffTool:             "http://www.aptest.com/standards/htmldiff/htmldiff.pl",
 	implementationReportURI: "https://www.w3.org/WAI/WCAG22/implementation-report/",
 	
